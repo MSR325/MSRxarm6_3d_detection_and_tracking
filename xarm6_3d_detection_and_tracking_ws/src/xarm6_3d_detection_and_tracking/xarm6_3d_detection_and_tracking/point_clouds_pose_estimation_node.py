@@ -7,30 +7,32 @@ import numpy as np
 import open3d as o3d
 from std_srvs.srv import Empty
 
+
 class PointCloudsPoseEstimationNode(Node):
     def __init__(self):
         super().__init__('point_clouds_pose_estimation_node')
         self.bridge = CvBridge()
-        
+
         # Subscribers
         self.color_sub = self.create_subscription(
             Image, '/color/image_raw', self.color_callback, 10)
         self.depth_sub = self.create_subscription(
             Image, '/aligned_depth_to_color/image_raw', self.depth_callback, 10)
-        
+
         self.color_image = None
         self.depth_image = None
         self.min_component_area = 1000
         self.camera_intrinsics = self.setup_camera_intrinsics()
         self.vis = None
         self.point_cloud = None
+        self.latest_pcd = None
         self.setup_visualizer()
 
         # Service to save current point cloud as model reference
         self.create_service(Empty, 'save_model_point_cloud', self.save_model_service_callback)
 
         # Load model for alignment
-        self.model_pcd = o3d.io.read_point_cloud("model_object.ply")  # path to your model point cloud
+        self.model_pcd = o3d.io.read_point_cloud("model_object.ply")
 
     def setup_camera_intrinsics(self):
         width, height = 1280, 720
@@ -88,14 +90,17 @@ class PointCloudsPoseEstimationNode(Node):
 
     def create_point_cloud_from_color_and_depth(self, rgbd_image):
         pcd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd_image, self.camera_intrinsics)
-        pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+        pcd.transform([[1, 0, 0, 0],
+                       [0, -1, 0, 0],
+                       [0, 0, -1, 0],
+                       [0, 0, 0, 1]])
         return pcd
 
     def generate_center_line(self, pcd):
         centroid = pcd.get_center()
         points = np.asarray(pcd.points)
         if len(points) == 0:
-            return None
+            return None, None, None
         max_z_idx = np.argmax(points[:, 2])
         feature_point = points[max_z_idx]
         line = o3d.geometry.LineSet(
@@ -119,17 +124,23 @@ class PointCloudsPoseEstimationNode(Node):
             target_down, o3d.geometry.KDTreeSearchParamHybrid(radius=0.025, max_nn=100))
 
         result_ransac = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
-            source=source_down, target=target_down, source_feature=source_fpfh, target_feature=target_fpfh,
+            source=source_down, target=target_down,
+            source_feature=source_fpfh, target_feature=target_fpfh,
             mutual_filter=True,
             max_correspondence_distance=0.015,
             estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
             ransac_n=4,
-            checkers=[o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
-                      o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(0.015)],
+            checkers=[
+                o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
+                o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(0.015)
+            ],
             criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(50000, 1000)
         )
 
-        # Estimate normals for full-res clouds before ICP
+        self.get_logger().info(
+            f'RANSAC alignment: Fitness={result_ransac.fitness:.4f}, Inlier RMSE={result_ransac.inlier_rmse:.4f}'
+        )
+
         source_pcd.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=0.01, max_nn=30))
         target_pcd.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=0.01, max_nn=30))
 
@@ -138,6 +149,11 @@ class PointCloudsPoseEstimationNode(Node):
             result_ransac.transformation,
             o3d.pipelines.registration.TransformationEstimationPointToPlane()
         )
+
+        self.get_logger().info(
+            f'ICP refinement: Fitness={result_icp.fitness:.4f}, RMSE={result_icp.inlier_rmse:.4f}'
+        )
+
         return result_icp.transformation
 
     def update_point_cloud_visualization(self, pcd, line=None, model=None):
@@ -166,12 +182,11 @@ class PointCloudsPoseEstimationNode(Node):
             rgbd_image = self.generate_rgbd_image(clean_mask, self.depth_image, self.color_image)
             pcd = self.create_point_cloud_from_color_and_depth(rgbd_image)
 
-
             if len(pcd.points) == 0:
                 self.get_logger().warn('Generated point cloud is empty — skipping.')
                 return
-            
-            self.latest_pcd = pcd # Save latest point cloud for capture service
+
+            self.latest_pcd = pcd
 
             line, centroid, feature_point = self.generate_center_line(pcd)
             transformation = self.align_and_register_model(self.model_pcd, pcd)
@@ -196,7 +211,6 @@ class PointCloudsPoseEstimationNode(Node):
         cv2.destroyAllWindows()
         super().destroy_node()
 
-
 def main(args=None):
     rclpy.init(args=args)
     node = PointCloudsPoseEstimationNode()
@@ -207,6 +221,7 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
