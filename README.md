@@ -34,6 +34,7 @@ It enables the xArm6 to scan an **oil pan model** in simulation and estimate its
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/MSRxarm6_3d_detection_and_tracking.git
+```
 
 ### 2️⃣ Add oil pan model to Gazebo
 
@@ -45,11 +46,13 @@ To have the oil pan appear in the simulation, download the oilpan directory and 
 cd ~/xarm6_3d_detection_and_tracking_ws/
 colcon build
 source install/setup.bash
+```
 
 ### 4️⃣ Launch the Gazebo simulation
 
 ```bash
 ros2 launch xarm_moveit_config xarm6_moveit_gazebo.launch.py add_realsense_d435i:=true
+```
 
 This will:
 - Spawn the xArm6 robot.
@@ -61,6 +64,7 @@ This will:
 ```bash
 source ~/xarm6_3d_detection_and_tracking_ws/install/setup.bash
 ros2 run xarm6_3d_detection_and_tracking point_clouds_pose_estimation_node
+```
 
 ### 6️⃣ (Optional) Capture a reference model point cloud
 
@@ -68,5 +72,6 @@ When your oil pan is positioned as a model reference:
 
 ```bash
 ros2 service call /save_model_point_cloud std_srvs/srv/Empty
+```
 
 This will save the current point cloud as model_object.ply for alignment.
