@@ -246,10 +246,163 @@ To create a visualization, you can select by topic the following options:
 
 The `Camera` option displays an image from the camera, with the visualized world rendered behind it. The `DepthCloud` option displays point clouds based on depth maps. The `Image` display creates a new rendering window in an image. 
 
-
 - Add a PointCloud2 display
 - Set the topic to `/depth/points`
 - You should now see your live point cloud stream from the Kinect sensor.
+
+## 📷 Perform 3-D Oil Pan Detection & Tracking with Azure Kinect Sensor Attached to xARM6
+
+Repeat the previous procedure to visualize the **Azure Kinect's** topics first.
+
+### 1️⃣ Launch Oil Pan Tracking Node
+
+```bash
+ros2 run xarm6_3d_detection_and_tracking azure_kinect_oil_pan_tracking_node
+```
+
+### 2️⃣ Position the Oil Pan
+- Place the oil pan **30-80 cm** from the camera.
+- Ensure good contrast with background.
+- Avoid reflective surfaces underneath.
+- Position with the length axis visible.
+
+### 3️⃣ Save Reference Model
+
+```bash
+# When oil pan is properly positioned and detected
+ros2 service call /save_model_point_cloud std_srvs/srv/Empty
+```
+
+**Expected output:**
+
+```vbnet
+[INFO] Oil pan detected: 1234 points
+[INFO] Current point cloud saved as oil_pan_model.ply
+```
+
+## Monitoring and Trouble Shooting
+
+### 1️⃣ Check Node Status
+
+```bash
+# View node information
+ros2 node info /azure_kinect_oil_pan_tracking_node
+
+# Monitor log output
+ros2 run rqt_console rqt_console
+```
+
+### 2️⃣ Debug Topics
+
+```bash
+# View color image
+ros2 run rqt_image_view rqt_image_view /rgb/image_raw
+
+# View depth image
+ros2 run rqt_image_view rqt_image_view /depth_to_rgb/image_raw
+```
+
+### 3️⃣ Parameter Tuning
+
+Edit these parameters in the node code based on your setup:
+
+```python
+# Detection parameters
+self.min_component_area = 2000    # Minimum oil pan size in pixels
+self.depth_min = 300             # Closest detection distance (mm)
+self.depth_max = 800             # Furthest detection distance (mm)
+
+# Color masking (in create_color_mask function)
+lo_range = np.array([0, 0, 0])      # HSV lower bound
+up_range = np.array([180, 255, 80]) # HSV upper bound
+```
+
+## Understanding the Output
+
+### 1️⃣ Visualization Window
+
+- **Green Point Cloud:** Currently detected oil pan
+- **Red Point Cloud:** Reference model aligned to current detection
+- **Red Line:** Characteristic orientation line
+- **Coordinate Frame:** World reference frame
+
+### 2️⃣ Terminal Output
+
+```bash
+[INFO] Oil pan detected: 1234 points
+[INFO] RANSAC: Fitness=0.8500, RMSE=0.0050
+[INFO] ICP: Fitness=0.9200, RMSE=0.0025
+[INFO] Selected oil pan component: area=2500, aspect_ratio=2.30, fill_ratio=0.65
+```
+
+### 3️⃣ Success Metrics
+
+- **Fitness Score:** 0.7-1.0 (higher is better alignment)
+- **RMSE:** <0.01 (lower is better accuracy)
+- **Aspect Ratio:** 1.2-5.0 (oil pan shape validation)
+- **Fill Ratio:** 0.3-0.85 (complex shape validation)
+
+## Common Issues & Solutions
+
+### 1️⃣ "No oil pan detected" Warning
+
+**Causes:**
+- Oil pan not in depth range (30-80cm)
+- Poor color contrast
+- Object too small/large
+
+**Solutions:**
+
+```bash
+# Adjust detection range
+# Edit in constructor:
+self.depth_min = 250  # Closer detection
+self.depth_max = 1000 # Further detection
+self.min_component_area = 1500  # Smaller minimum size
+```
+
+### 2️⃣ "No valid oil pan component found"
+
+**Causes:**
+- Object doesn't match oil pan shape criteria
+- Multiple objects in view
+
+**Solutions:**
+
+- Ensure oil pan is the dominant dark object
+- Adjust shape validation parameters
+- Improve lighting/contrast
+
+### 3️⃣ Poor Tracking Accuracy
+
+**Causes:**
+- No reference model saved
+- Poor initial alignment
+- Insufficient point cloud density
+
+**Solutions**:
+
+```bash
+# Re-save model with better positioning
+ros2 service call /save_model_point_cloud std_srvs/srv/Empty
+
+# Adjust voxel size for denser cloud (in preprocess_point_cloud)
+pcd = pcd.voxel_down_sample(0.003)  # Smaller voxel = denser cloud
+```
+
+## Performance Optimization
+
+### 1️⃣ Reduce Processing Load
+
+- Lower camera resolution if possible
+- Increase voxel size for faster processing
+- Reduce RANSAC iterations for real-time performance
+
+### 2️⃣ Improve Accuracy
+
+- Use higher resolution depth data
+- Decrease voxel size for denser point clouds
+- Increase RANSAC iterations for better alignment
 
 ## 📎 Notes
 

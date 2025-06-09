@@ -10,7 +10,7 @@ import struct
 
 class RGBDImageGeneratedAzureKinectListenerNode(Node):
     def __init__(self):
-        super().__init__('rgbd_image_generated_azure_kinect_node')
+        super().__init__('inteld435i_rgbd_image_generator_node')
         self.bridge = CvBridge()
         
         # Subscribers

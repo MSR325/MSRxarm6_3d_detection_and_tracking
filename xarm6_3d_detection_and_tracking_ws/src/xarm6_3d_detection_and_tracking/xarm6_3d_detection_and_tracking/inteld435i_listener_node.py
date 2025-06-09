@@ -7,7 +7,7 @@ import numpy as np
 
 class AzureKinectListenerNode(Node):
     def __init__(self):
-        super().__init__('azure_kinect_listener_node')
+        super().__init__('inteld435i_listener_node')
 
         # Bridge to convert ROS <-> OpenCV images
         self.bridge = CvBridge()

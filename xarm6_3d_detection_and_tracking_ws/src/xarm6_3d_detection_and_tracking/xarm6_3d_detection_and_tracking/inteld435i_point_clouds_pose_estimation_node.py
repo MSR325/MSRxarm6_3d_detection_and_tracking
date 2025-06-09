@@ -10,7 +10,7 @@ from std_srvs.srv import Empty
 
 class PointCloudsPoseEstimationNode(Node):
     def __init__(self):
-        super().__init__('point_clouds_pose_estimation_node')
+        super().__init__('inteld435i_point_clouds_pose_estimation_node')
         self.bridge = CvBridge()
 
         # Subscribers

@@ -7,7 +7,7 @@ import numpy as np
 
 class FilteredAzureKinectListenerNode(Node):
     def __init__(self):
-        super().__init__('filtered_azure_kinect_listener_node')
+        super().__init__('inteld435i_filtered_listener_node')
 
         self.bridge = CvBridge()
 
