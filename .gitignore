@@ -1,0 +1,14 @@
+# ROS 2 specific
+build/
+install/
+log/
+
+# Python
+*.pyc
+__pycache__/
+*.egg-info/
+*.egg
+
+# IDE
+.vscode/
+.idea/
