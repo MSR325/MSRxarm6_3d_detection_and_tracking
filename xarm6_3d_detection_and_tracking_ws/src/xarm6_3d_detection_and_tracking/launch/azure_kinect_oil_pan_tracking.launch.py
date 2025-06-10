@@ -8,18 +8,11 @@ def generate_launch_description():
             package='azure_kinect_ros_driver',
             executable='node',
             name='azure_kinect',
-            parameters=[{'rgb_camera_info': True}]
-        ),
-        
-        # XArm6 3D Detection and Tracking Node
-        Node(
-            package='xarm6_3d_detection_and_tracking',
-            executable='azure_kinect_oil_pan_tracking_node',
-            name='azure_kinect_oil_pan_tracking_node',
             parameters=[
-                {'min_component_area': 2500},
-                {'depth_min': 300},
-                {'depth_max': 800}
+                {'rgb_camera_info': True},
+                {'point_cloud': True},           # Enable point cloud publishing
+                {'rgb_point_cloud': True},       # Enable RGB point cloud
+                {'point_cloud_in_depth_frame': True}  # Publish in depth frame
             ]
-        )
+        ),
     ])

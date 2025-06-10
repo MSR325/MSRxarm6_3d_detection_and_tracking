@@ -10,7 +10,7 @@ import struct
 
 class RGBDImageGeneratedAzureKinectListenerNode(Node):
     def __init__(self):
-        super().__init__('azure_kinect_rgbd_image_generator_node')
+        super().__init__('azure_kinect_source_point_cloud')
         self.bridge = CvBridge()
         
         # Subscribers
@@ -86,6 +86,49 @@ class RGBDImageGeneratedAzureKinectListenerNode(Node):
 
         return result_rgb, result_depth, rgbd_image
     
+    def convert_o3d_to_ros2_pointcloud2(self, o3d_cloud, frame_id="map", timestamp=None):
+        header = Header()
+        header.stamp = timestamp if timestamp else self.get_clock().now().to_msg()
+        header.frame_id = frame_id
+
+        points = np.asarray(o3d_cloud.points)
+        has_colors = o3d_cloud.has_colors()
+        colors = np.asarray(o3d_cloud.colors) if has_colors else None
+
+        fields = [
+            PointField(name='x', offset=0,  datatype=PointField.FLOAT32, count=1),
+            PointField(name='y', offset=4,  datatype=PointField.FLOAT32, count=1),
+            PointField(name='z', offset=8,  datatype=PointField.FLOAT32, count=1),
+        ]
+
+        if has_colors:
+            fields.append(PointField(name='rgb', offset=12, datatype=PointField.FLOAT32, count=1))
+
+        point_step = 16 if has_colors else 12
+        data = bytearray()
+
+        for i in range(len(points)):
+            x, y, z = points[i]
+            data.extend(struct.pack('fff', x, y, z))
+
+            if has_colors:
+                r, g, b = (colors[i] * 255).astype(np.uint8)
+                rgb = struct.unpack('f', struct.pack('I', (r << 16) | (g << 8) | b))[0]
+                data.extend(struct.pack('f', rgb))
+
+        pointcloud_msg = PointCloud2()
+        pointcloud_msg.header = header
+        pointcloud_msg.height = 1
+        pointcloud_msg.width = len(points)
+        pointcloud_msg.fields = fields
+        pointcloud_msg.is_bigendian = False
+        pointcloud_msg.point_step = point_step
+        pointcloud_msg.row_step = point_step * len(points)
+        pointcloud_msg.is_dense = True
+        pointcloud_msg.data = data
+
+        return pointcloud_msg
+    
     def process_and_display(self):
         if self.color_image is None or self.depth_image is None:
             return
@@ -135,20 +178,29 @@ class RGBDImageGeneratedAzureKinectListenerNode(Node):
             pcd.translate(-centroid)
 
             # Display point cloud
-            o3d.visualization.draw_geometries([pcd])
+            #o3d.visualization.draw_geometries([pcd])
 
             # 🖥️ Visualize intermediate steps for debugging
-            depth_display = cv2.normalize(filtered_depth, None, 0, 255, cv2.NORM_MINMAX)
-            depth_display = np.uint8(depth_display)
-            depth_colormap = cv2.applyColorMap(depth_display, cv2.COLORMAP_JET)
+            # depth_display = cv2.normalize(filtered_depth, None, 0, 255, cv2.NORM_MINMAX)
+            # depth_display = np.uint8(depth_display)
+            # depth_colormap = cv2.applyColorMap(depth_display, cv2.COLORMAP_JET)
 
-            cv2.imshow('Original Color Image', self.color_image)
-            cv2.imshow('Color Mask', color_mask)
-            cv2.imshow('Depth Mask', depth_mask)
-            cv2.imshow('Combined Mask (Raw)', combined_mask)
-            cv2.imshow('Combined Mask (Cleaned)', clean_combined_mask)
-            cv2.imshow('Filtered Color Image', filtered_color)
-            cv2.imshow('Filtered Depth Image (Colormap)', depth_colormap)
+            # cv2.imshow('Original Color Image', self.color_image)
+            # cv2.imshow('Color Mask', color_mask)
+            # cv2.imshow('Depth Mask', depth_mask)
+            # cv2.imshow('Combined Mask (Raw)', combined_mask)
+            # cv2.imshow('Combined Mask (Cleaned)', clean_combined_mask)
+            # cv2.imshow('Filtered Color Image', filtered_color)
+            # cv2.imshow('Filtered Depth Image (Colormap)', depth_colormap)
+
+            # Publish to /filtered_point_cloud
+            point_cloud_msg = self.convert_o3d_to_ros2_pointcloud2(pcd)
+
+            if point_cloud_msg:
+                self.point_cloud_pub.publish(point_cloud_msg)
+                self.get_logger().info("Published point cloud to /filtered_point_cloud")
+            else:
+                self.get_logger().warn("Empty point cloud — nothing published.")
 
             self.get_logger().info("Processing cycle complete.")
             

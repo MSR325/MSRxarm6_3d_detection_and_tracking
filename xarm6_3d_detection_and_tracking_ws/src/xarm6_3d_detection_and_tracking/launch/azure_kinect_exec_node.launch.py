@@ -13,8 +13,11 @@ def generate_launch_description():
                 'depth_enabled': True,
                 'color_resolution': '720P',      # Options: '720P', '1080P', '2160P', etc.
                 'depth_mode': 'NFOV_UNBINNED',   # Options: 'NFOV_UNBINNED', 'WFOV_2X2BINNED', etc.
-                'fps': 30,
-                'point_cloud': False             # Set to True if you also want point clouds published
+                'fps': 15, # 30
+                'rgb_camera_info': True,
+                'point_cloud': True,
+                'rgb_point_cloud': True,
+                'point_cloud_in_depth_frame': True             # Set to True if you also want point clouds published
             }]
         ),
     ])
