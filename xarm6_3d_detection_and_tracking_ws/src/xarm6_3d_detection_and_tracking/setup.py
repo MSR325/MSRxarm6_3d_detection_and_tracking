@@ -33,6 +33,7 @@ setup(
             'azure_kinect_filtered_listener_node = xarm6_3d_detection_and_tracking.azure_kinect_filtered_listener_node:main',
             'azure_kinect_rgbd_image_generator_node = xarm6_3d_detection_and_tracking.azure_kinect_rgbd_image_generator_node:main',
             'azure_kinect_source_point_cloud = xarm6_3d_detection_and_tracking.azure_kinect_source_point_cloud:main',
+            'azure_kinect_aligned_point_clouds = xarm6_3d_detection_and_tracking.azure_kinect_aligned_point_clouds:main',
             'azure_kinect_oil_pan_tracking_node = xarm6_3d_detection_and_tracking.azure_kinect_oil_pan_tracking_node:main',
         ],
     },

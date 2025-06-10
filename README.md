@@ -280,6 +280,42 @@ ros2 service call /save_model_point_cloud std_srvs/srv/Empty
 [INFO] Current point cloud saved as oil_pan_model.ply
 ```
 
+## Point Cloud Alignment Node
+
+This ROS 2 Python node performs alignment, scaling, and pose estimation between two point clouds:
+
+- `/points2` → raw point cloud (e.g., from Azure Kinect)
+- `/filtered_point_cloud` → pre-processed or segmented point cloud
+
+The node uses Open3D for:
+- Downsampling
+- Feature extraction (FPFH)
+- Global RANSAC registration
+- Local ICP refinement
+
+Then publishes the aligned and target point clouds as new topics for visualization or further processing.
+
+### 🔧 How to Run
+
+1. Install dependencies if you haven't:
+
+```bash
+sudo apt install ros-humble-pcl-conversions
+pip install open3d sensor_msgs_py
+```
+
+2. Source your ROS2 workspace
+
+```bash
+source install/setup.bash
+```
+
+3. Run the point cloud alignment node:
+
+```bash
+ros2 run xarm6_3d_detection_and_tracking azure_kinect_aligned_point_clouds
+```
+
 ## Monitoring and Trouble Shooting
 
 ### 1️⃣ Check Node Status
