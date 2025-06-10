@@ -12,8 +12,8 @@ class PointCloudAlignmentNode(Node):
         super().__init__('azure_kinect_aligned_point_clouds')
 
         # Subscriptions
-        self.create_subscription(PointCloud2, '/points2', self.source_callback, 10)
-        self.create_subscription(PointCloud2, '/filtered_point_cloud', self.target_callback, 10)
+        self.create_subscription(PointCloud2, '/filtered_target_point_cloud', self.source_callback, 10)
+        self.create_subscription(PointCloud2, '/filtered_source_point_cloud', self.target_callback, 10)
 
         # Publishers
         self.aligned_source_pub = self.create_publisher(PointCloud2, '/aligned_source_cloud', 10)
@@ -26,13 +26,13 @@ class PointCloudAlignmentNode(Node):
     def source_callback(self, msg):
         self.source_cloud = self.convert_ros2_to_o3d(msg)
         self.source_header = msg.header
-        self.get_logger().info('Received source point cloud from /points2')
+        self.get_logger().info('Received source point cloud from /filtered_target_point_cloud')
         self.try_align()
 
     def target_callback(self, msg):
         self.target_cloud = self.convert_ros2_to_o3d(msg)
         self.target_header = msg.header
-        self.get_logger().info('Received target point cloud from /filtered_point_cloud')
+        self.get_logger().info('Received target point cloud from /filtered_source_point_cloud')
         self.try_align()
 
     def convert_ros2_to_o3d(self, msg):
