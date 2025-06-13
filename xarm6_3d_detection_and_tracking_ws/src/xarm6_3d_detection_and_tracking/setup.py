@@ -24,6 +24,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'scalable_transform_publisher = xarm6_3d_detection_and_tracking.scalable_transform_publisher:main',
+            'point_cloud_scaler = xarm6_3d_detection_and_tracking.point_cloud_scaler:main',
             'inteld435i_listener_node = xarm6_3d_detection_and_tracking.inteld435i_listener_node:main',
             'inteld435i_filtered_listener_node = xarm6_3d_detection_and_tracking.inteld435i_filtered_listener_node:main',
             'inteld435i_rgbd_image_generator_node = xarm6_3d_detection_and_tracking.inteld435i_rgbd_image_generator_node:main',
@@ -34,6 +36,8 @@ setup(
             'azure_kinect_rgbd_image_generator_node = xarm6_3d_detection_and_tracking.azure_kinect_rgbd_image_generator_node:main',
             'azure_kinect_source_scanned_point_cloud = xarm6_3d_detection_and_tracking.azure_kinect_source_scanned_point_cloud:main',
             'azure_kinect_target_canonical_point_cloud = xarm6_3d_detection_and_tracking.azure_kinect_target_canonical_point_cloud:main',
+            'azure_kinect_align_and_scale = xarm6_3d_detection_and_tracking.azure_kinect_align_and_scale:main',
+            'azure_kinect_register_pose = xarm6_3d_detection_and_tracking.azure_kinect_register_pose:main',
             'perform_pose_reg_on_source_scanned = xarm6_3d_detection_and_tracking.perform_pose_reg_on_source_scanned:main',
             'pose_registration = xarm6_3d_detection_and_tracking.pose_registration:main',
         ],
