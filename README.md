@@ -66,22 +66,18 @@ This will:
 - Add a simulated Realsense D435i sensor.
 - Load the oil pan model in Gazebo.
 
-### 5️⃣ Run the point cloud pose estimation node
+### 5️⃣ Launch the nodes responsible for generating the point clouds and aligning, scaling, and registering the scanned point cloud's pose to update the source canonical model point cloud
 
 ```bash
 source ~/xarm6_3d_detection_and_tracking_ws/install/setup.bash
-ros2 run xarm6_3d_detection_and_tracking point_clouds_pose_estimation_node
+ros2 launch xarm6_3d_detection_and_tracking inteld435i_visualize_source_target_point_clouds.launch
 ```
 
-### 6️⃣ (Optional) Capture a reference model point cloud
-
-When your oil pan is positioned as a model reference:
-
-```bash
-ros2 service call /save_model_point_cloud std_srvs/srv/Empty
-```
-
-This will save the current point cloud as `model_object.ply` for alignment.
+Inside this launch, you have the following nodes:
+- `inteld435i_target_scanned_point_cloud_node`: Generates the target scanned point cloud from RGBD data provided by the simulated Intel D435i camera in the Gazebo simulation.
+- `inteld435i_source_canonical_point_cloud_node`: Converts the `.ply` canonical model point cloud of the oil pan to a `ROS2 PointCloud2` message type.
+- `inteld435i_align_and_scale_point_clouds`: Implements orientation line alignment of both models and scales the canonical model point cloud to the size of the target scanned point cloud.
+- `inteld435i_register_pose_point_clouds`: Implements RANSAC and ICP for pose registration so the source canonical model point cloud has the same pose as the target scanned point cloud.
 
 ## 📷 Setting up Azure Kinect on Ubuntu 22.04 with ROS 2 Humble
 
