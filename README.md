@@ -47,7 +47,28 @@ git clone https://github.com/YOUR_USERNAME/MSRxarm6_3d_detection_and_tracking.gi
 
 To have the oil pan appear in the simulation, download the oilpan directory and copy it to your `~/.gazebo/models` directory. Make sure to hit `Ctrl + h` in order to make the directory unhidden and navigate to it.
 
-### 3️⃣ Build the workspace
+### 3️⃣ Change the model path to your system's path to the canonical model point cloud `oil_pan_full_pc_10000.ply` to run `inteld435i_source_canonical_point_cloud_node.py` node
+
+```python
+def main(args=None):
+    rclpy.init(args=args)
+    
+    model_path = "/home/username/MSRxarm6_3d_detection_and_tracking/xarm6_3d_detection_and_tracking_ws/src/xarm6_3d_detection_and_tracking/pointClouds/oil_pan_full_pc_10000.ply"
+    
+    node = CanonicalModelPublisher(model_path)
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+```
+
+### 4️⃣ Build the workspace
 
 ```bash
 cd ~/xarm6_3d_detection_and_tracking_ws/
@@ -55,7 +76,7 @@ colcon build
 source install/setup.bash
 ```
 
-### 4️⃣ Launch the Gazebo simulation
+### 5️⃣ Launch the Gazebo simulation
 
 ```bash
 ros2 launch xarm_moveit_config xarm6_moveit_gazebo.launch.py add_realsense_d435i:=true
@@ -66,7 +87,13 @@ This will:
 - Add a simulated Realsense D435i sensor.
 - Load the oil pan model in Gazebo.
 
-### 5️⃣ Launch the nodes responsible for generating the point clouds and aligning, scaling, and registering the scanned point cloud's pose to update the source canonical model point cloud
+### 5️⃣ Launch `inteld435i_visualize_source_target_point_clouds.launch.py` launch file
+
+This launch file executes:
+- The scanned target point cloud processing node
+- The canonical source point cloud publisher node
+- The alignment and scaling of the canonical model node
+- The pose registration node
 
 ```bash
 source ~/xarm6_3d_detection_and_tracking_ws/install/setup.bash
@@ -78,6 +105,20 @@ Inside this launch, you have the following nodes:
 - `inteld435i_source_canonical_point_cloud_node`: Converts the `.ply` canonical model point cloud of the oil pan to a `ROS2 PointCloud2` message type.
 - `inteld435i_align_and_scale_point_clouds`: Implements orientation line alignment of both models and scales the canonical model point cloud to the size of the target scanned point cloud.
 - `inteld435i_register_pose_point_clouds`: Implements RANSAC and ICP for pose registration so the source canonical model point cloud has the same pose as the target scanned point cloud.
+
+### 6️⃣ Run RViz2 to see the published point clouds
+
+```bash
+rviz2
+```
+
+Once inside RViz, change the fixed frame to `camera_link` and open the following `PointCloud2` topics:
+
+- `/scanned_model_point_cloud`
+- `/canonical_model_point_cloud`
+- `/aligned_canonical_model_point_cloud`
+- `/ransac_registered_point_cloud`
+- `/icp_registered_point_cloud`
 
 ## 📷 Setting up Azure Kinect on Ubuntu 22.04 with ROS 2 Humble
 
